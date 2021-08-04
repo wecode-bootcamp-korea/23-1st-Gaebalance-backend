@@ -7,15 +7,15 @@ class Category(models.Model):
         db_table = 'categories'
 
 class SubCategory(models.Model):
-    category     = models.ForeignKey('Category', on_delete=models.CASCADE)
+    category     = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True)
     sub_category = models.CharField(max_length=45)
 
     class Meta:
         db_table = 'sub_categories'
 
 class Product(models.Model):
-    sub_category     = models.ForeignKey('SubCategory', on_delete=models.CASCADE)
-    color            = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='products')
+    sub_category     = models.ForeignKey('SubCategory', on_delete=models.SET_NULL, null=True)
+    color            = models.ForeignKey('Color', on_delete=models.SET_NULL, null=True, related_name='products')
     name             = models.CharField(max_length=45)
     price            = models.DecimalField(max_digits=10, decimal_places=2)
     style_code       = models.CharField(max_length=45)
@@ -51,14 +51,6 @@ class Size(models.Model):
 
 class Color(models.Model):
     name  = models.CharField(max_length=45)
-    users = models.ManyToManyField('users.User', through='UserColor', related_name='colors')
     
     class Meta:
         db_table = 'colors'
-
-class UserColor(models.Model):
-    user  = models.ForeignKey('users.User', on_delete=models.CASCADE)
-    color = models.ForeignKey('Color', on_delete=models.CASCADE)
-    
-    class Meta:
-        db_table = 'users_colors'
