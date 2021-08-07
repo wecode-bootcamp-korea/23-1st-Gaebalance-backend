@@ -16,7 +16,7 @@ class JoinView(View):
         try:
             data =json.loads(request.body)
             bcrypt_password = bcrypt.hashpw(data["password"].encode("utf-8"),bcrypt.gensalt()). decode("utf-8")
-
+           
             if (User.objects.filter(email=data["email"]).exists()) or (User.objects.filter(phone_number=data['phone_number']).exists()):
                 return JsonResponse ({"MESSAGE": "EXIST_DATA"}, status = 400)
 
@@ -33,13 +33,9 @@ class JoinView(View):
 				address      = data["address"],
 				size         = Size.objects.get(id=data["size_id"])
 			)  
+		    
+            UserColor.objects.bulk_create([ UserColor(user=User.objects.get(id=user.id), color=Color.objects.get(id=color_id)) for color_id in data["colors_id"]])
 
-            for color_id in data["colors_id"]:
-                UserColor.objects.create(
-				user  = User.objects.get(id=user.id),
-				color = Color.objects.get(id=color_id)
-			    )
-			
             return JsonResponse ({"MESSAGE":"CREATED"}, status = 201)
 				
         except KeyError:
@@ -60,7 +56,7 @@ class LoginView(View):
 			password = user.password.encode("utf-8")
 
 			if not bcrypt.checkpw(data["password"].encode("utf-8"),password) :
-				return JsonResponse ({"MESSAGE":"INVALID_PASSWORD"},status = 401)
+				return JsonResponse ({"MESSAGE":"USER_DOES_NOT_EXIST"},status = 401)
 
 			access_token = jwt.encode({"id": user.id}, SECRET_KEY, algorithm="HS256")
 			return JsonResponse ({"access_token":"token","MESSAGE":"SUCCESS"}, status = 200)
