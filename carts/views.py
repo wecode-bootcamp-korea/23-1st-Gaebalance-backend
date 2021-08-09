@@ -6,9 +6,10 @@ from django.views import View
 from carts.models import Cart
 from users.models import User
 from products.models import Product, Size
+from users.utils import login_deco
 
 class CartView(View):
-    @LoginDecorator
+    @login_deco
     def delete(self, request):
         cart = request.GET.getlist("id")
 
