@@ -6,9 +6,10 @@ from django.views import View
 from carts.models import Cart
 from users.models import User
 from products.models import Product, Size
+from users.utils import login_deco
 
 class CartView(View):
-    @LoginDecorator
+    @login_deco
     def post(self, request):
         data = json.loads(request.body)
 
@@ -19,26 +20,22 @@ class CartView(View):
             if not Size.objects.filter(id = data["size_id"]).exists():
                 return JsonResponse({"message":"SIZE_DOES_NOT_EXIST"}, status = 400)
 
-            if data["product_id"] == "" or data["size_id"] == "" or data["count"] == "":
-                 return JsonResponse({"message":"VALUE_ERROR"}, status = 400)
-            
             if data["count"] == 0:
                 return JsonResponse({"message":"INVALID_COUNT"}, status = 400)
+
+            user     = User.objects.get(id = request.user.id)
+            product  = Product.objects.get(id = data["product_id"])
+            size     = Size.objects.get(id = data["size_id"])
+
+            cart, is_created = Cart.objects.get_or_create(user = user, product = product, size = size)
             
-            if Cart.objects.filter(user = request.user.id, product = data["product_id"], size = data["size_id"]).exists():
-                cart = Cart.objects.get(user = request.user.id, product = data["product_id"], size = data["size_id"])
-                Cart.objects.update(
-                    count = cart.count + data["count"]
-                )
-                return JsonResponse({"message":"UPDATED"}, status = 201)
-            else:
-                Cart.objects.create(
-                    user     = User.objects.get(id = request.user.id),
-                    product  = Product.objects.get(id = data["product_id"]),
-                    size     = Size.objects.get(id = data["size_id"]),
-                    count    = data["count"]
-                )
-                return JsonResponse({"message":"CREATED"}, status = 201)
+            if is_created:
+                cart.count = 0
+            
+            cart.count += data["count"]
+            cart.save()
+                
+            return JsonResponse({"message":"CREATED"}, status = 201)
 
         except KeyError:
             return JsonResponse({"message":"KEY_ERROR"}, status = 400)
