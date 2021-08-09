@@ -12,10 +12,11 @@ from users.utils import login_deco
 class CartView(View):
     @login_deco
     def get(self, request):            
-        carts = Cart.objects.filter(user_id = 4)
+        carts = Cart.objects.filter(user_id = request.user.id)
         total_price = carts.aggregate(price = Sum(F("count") * F("product__price")))
 
         response = [{
+            "id"    : cart.id,
             "name"  : cart.product.name,
             "image" : cart.product.image_url,
             "color" : cart.product.color.name,
