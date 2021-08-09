@@ -21,4 +21,4 @@ def login_deco(func):
 
         return func(self, request, *args, **kwargs)
 
-    return wrapper    
+    return wrapper
