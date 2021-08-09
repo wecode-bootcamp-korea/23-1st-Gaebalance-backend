@@ -10,8 +10,6 @@ class ProductView(View):
 
         product = Product.objects.get(id=product_id)
 
-        image_list = [image.image_url for image in product.detailimage_set.all()]
-
         response = {
             "id"               : product.id,
             "name"             : product.name,
@@ -21,10 +19,10 @@ class ProductView(View):
             "manufacture_date" : product.manufacture_date,
             "description"      : product.description,
             "image_url"        : product.image_url,
-            "image_list"       : image_list,
+            "image_list"       : [image.image_url for image in product.detailimage_set.all()],
             "color"            : product.color.name,
             "sub_category"     : product.sub_category.sub_category,
             "category"         : product.sub_category.category.category,
         }
 
-        return JsonResponse({"response": response}, status=200)
+        return JsonResponse(response, status=200)
