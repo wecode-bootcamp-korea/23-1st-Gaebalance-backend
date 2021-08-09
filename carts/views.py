@@ -23,7 +23,7 @@ class CartView(View):
             if data["count"] == 0:
                 return JsonResponse({"message":"INVALID_COUNT"}, status = 400)
 
-            user     = User.objects.get(id = request.user.id)
+            user     = User.objects.get(id = 5)
             product  = Product.objects.get(id = data["product_id"])
             size     = Size.objects.get(id = data["size_id"])
 
