@@ -28,64 +28,58 @@ class ProductView(View):
 
         return JsonResponse(response, status=200)
 
-class ProductListView(View):
+class ProductsView(View):
     def get(self, request):
-        group               = request.GET.get('group', None)
-        sub_categories      = request.GET.getlist('sub-category', None)
-        colors              = request.GET.getlist('color', None)
-        sizes               = request.GET.getlist('size', None)
-        price_ranges        = request.GET.getlist('price', None)
-        sort_by             = request.GET.get('sort', None)
+        group          = request.GET.get('group', None)
+        sub_categories = request.GET.getlist('sub-category', None)
+        colors         = request.GET.getlist('color', None)
+        sizes          = request.GET.getlist('size', None)
+        price_ranges   = request.GET.getlist('price', None)
+        sort_by        = request.GET.get('sort', None)
 
-        group_filter        = Q()
-        sub_category_filter = Q()
-        color_filter        = Q()
-        size_filter         = Q()
-        price_range_filter  = Q()
+        limit          = request.GET.get('limit', None)
+        offset         = request.GET.get('offset', 0)
+
+        filters = Q()
 
         if group:
-            if group == 'men':
-                group_filter = Q(group='남자')
-            else:
-                group_filter = Q(group='여자')
+            filters &= Q(group=group)
 
         if sub_categories:
-            for sub_category in sub_categories:
-                sub_category_filter |= Q(sub_category=sub_category)
+            filters &= Q(sub_category__in=sub_categories)
 
         if colors:
-            for color in colors:
-                color_filter |= Q(color=color)
+            filters &= Q(color__in=colors)
 
         if sizes:
-            option_filter = Q()
-            for size in sizes:
-                option_filter |= Q(size=size)
-
-            size_filter = Q(id__in=ProductOption.objects.filter(option_filter).values('product'))
+            filters &= Q(id__in=ProductOption.objects.filter(Q(size__in=sizes)).values('product'))
 
         if price_ranges:
+            price_filter = Q()
             if '1' in price_ranges:
-                price_range_filter |= Q(price__lt=50000)
+                price_filter |= Q(price__lt=50000)
             if '2' in price_ranges:
-                price_range_filter |= Q(price__range=(50000,99999))
+                price_filter |= Q(price__range=(50000,99999))
             if '3' in price_ranges:
-                price_range_filter |= Q(price__range=(100000,149999))
+                price_filter |= Q(price__range=(100000,149999))
             if '4' in price_ranges:
-                price_range_filter |= Q(price__range=(150000,199999))
+                price_filter |= Q(price__range=(150000,199999))
             if '5' in price_ranges:
-                price_range_filter |= Q(price__gte=200000)
+                price_filter |= Q(price__gte=200000)
+            
+            filters &= price_filter
 
-        products = Product.objects.filter(
-                group_filter&
-                sub_category_filter&
-                color_filter&
-                size_filter&
-                price_range_filter
-            ).order_by('id')
+        if offset:
+            offset = int(offset)
+
+        if limit:
+            limit = offset + int(limit)
+
+        products = Product.objects.filter(filters).order_by('id')[offset:limit]
 
         if sort_by:
-            products = products.order_by(sort_by)
+            sort_key = {'low-price':'price','high-price':'-price','newest':'-manufacture_date'}
+            products = products.order_by(sort_key.get(sort_by,'id'))
 
         result = [{
                 "id"               : product.id,
