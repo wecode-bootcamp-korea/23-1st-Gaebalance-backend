@@ -6,10 +6,10 @@ from django.views import View
 from carts.models    import Cart
 from users.models    import User
 from products.models import Product, Size
-from users.utils     import login_deco
+from users.utils     import login_decorator
 
 class CartView(View):
-    @login_deco
+    @login_decorator
     def post(self, request):
         data = json.loads(request.body)
 
