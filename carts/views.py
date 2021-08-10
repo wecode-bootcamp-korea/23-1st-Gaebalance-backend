@@ -7,10 +7,10 @@ from django.db.models import Sum, F
 from carts.models    import Cart
 from users.models    import User
 from products.models import Product, Size
-from users.utils     import login_deco
+from users.utils     import login_decorator
 
 class CartView(View):
-    @login_deco
+    @login_decorator
     def get(self, request):            
         carts = Cart.objects.filter(user_id = request.user.id)
         total_price = carts.aggregate(price = Sum(F("count") * F("product__price")))
