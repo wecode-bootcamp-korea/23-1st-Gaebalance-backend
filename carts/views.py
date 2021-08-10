@@ -29,7 +29,7 @@ class CartView(View):
             cart.count += data["count"]
             cart.save()
                 
-            return JsonResponse({"message":"CREATED"}, status = 200)
+            return JsonResponse({"message":"SUCCESS"}, status = 200)
 
         except KeyError:
             return JsonResponse({"message":"KEY_ERROR"}, status = 400)
