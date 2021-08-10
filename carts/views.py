@@ -23,19 +23,13 @@ class CartView(View):
             if data["count"] == 0:
                 return JsonResponse({"message":"INVALID_COUNT"}, status = 400)
 
-            user     = User.objects.get(id = 5)
-            product  = Product.objects.get(id = data["product_id"])
-            size     = Size.objects.get(id = data["size_id"])
+            user = User.objects.get(id = request.user.id)
 
-            cart, is_created = Cart.objects.get_or_create(user = user, product = product, size = size)
-            
-            if is_created:
-                cart.count = 0
-            
+            cart, is_created = Cart.objects.get_or_create(user = user, product = data["product_id"], size = data["size_id"])            
             cart.count += data["count"]
             cart.save()
                 
-            return JsonResponse({"message":"CREATED"}, status = 201)
+            return JsonResponse({"message":"CREATED"}, status = 200)
 
         except KeyError:
             return JsonResponse({"message":"KEY_ERROR"}, status = 400)
