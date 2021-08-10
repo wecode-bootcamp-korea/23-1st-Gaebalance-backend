@@ -1,6 +1,6 @@
 from django.views import View
 from django.http  import JsonResponse
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Max, Min
 
 from products.models import Product
 
@@ -54,13 +54,13 @@ class ProductsView(View):
         if price_ranges:
             price_filters = Q()
             range_dict = {
-                '1':(0,49999),
+                '1':(int(Product.objects.aggregate(Min('price'))['price__min']),49999),
                 '2':(50000,99999),
                 '3':(100000,149999),
                 '4':(150000,199999),
-                '5':(200000,1000000)
+                '5':(200000,int(Product.objects.aggregate(Max('price'))['price__max'])),
             }
-            
+
             for price_range in price_ranges:
                 price_filters |= Q(price__range=range_dict[price_range])
             
