@@ -1,8 +1,8 @@
 from django.views import View
 from django.http  import JsonResponse
-from django.db.models import Q
+from django.db.models import Q, Sum
 
-from products.models import Product, ProductOption
+from products.models import Product
 
 class ProductView(View):
     def get(self, request, product_id):
@@ -34,12 +34,9 @@ class ProductsView(View):
         sub_categories = request.GET.getlist('sub-category', None)
         colors         = request.GET.getlist('color', None)
         sizes          = request.GET.getlist('size', None)
-        price_ranges   = request.GET.getlist('price', None)
+        price_ranges   = request.GET.getlist('price',None)
         sort_by        = request.GET.get('sort', None)
-
-        limit          = request.GET.get('limit', None)
-        offset         = request.GET.get('offset', 0)
-
+        
         filters = Q()
 
         if group:
@@ -52,34 +49,28 @@ class ProductsView(View):
             filters &= Q(color__in=colors)
 
         if sizes:
-            filters &= Q(id__in=ProductOption.objects.filter(Q(size__in=sizes)).values('product'))
+            filters &= Q(productoption__size__in=sizes)
 
         if price_ranges:
-            price_filter = Q()
-            if '1' in price_ranges:
-                price_filter |= Q(price__lt=50000)
-            if '2' in price_ranges:
-                price_filter |= Q(price__range=(50000,99999))
-            if '3' in price_ranges:
-                price_filter |= Q(price__range=(100000,149999))
-            if '4' in price_ranges:
-                price_filter |= Q(price__range=(150000,199999))
-            if '5' in price_ranges:
-                price_filter |= Q(price__gte=200000)
+            price_filters = Q()
+            range_dict = {
+                '1':(0,49999),
+                '2':(50000,99999),
+                '3':(100000,149999),
+                '4':(150000,199999),
+                '5':(200000,1000000)
+            }
             
-            filters &= price_filter
+            for price_range in price_ranges:
+                price_filters |= Q(price__range=range_dict[price_range])
+            
+            filters &= price_filters
 
-        if offset:
-            offset = int(offset)
-
-        if limit:
-            limit = offset + int(limit)
-
-        products = Product.objects.filter(filters).order_by('id')[offset:limit]
+        products = Product.objects.filter(filters).order_by('id')
 
         if sort_by:
-            sort_key = {'low-price':'price','high-price':'-price','newest':'-manufacture_date'}
-            products = products.order_by(sort_key.get(sort_by,'id'))
+            sort_key = {'low-price':'price','high-price':'-price','newest':'-manufacture_date','bestseller':'stock'}
+            products = products.annotate(stock=Sum('productoption__stock')).order_by(sort_key.get(sort_by,'id'))
 
         result = [{
                 "id"               : product.id,
@@ -87,7 +78,7 @@ class ProductsView(View):
                 "name"             : product.name,
                 "price"            : int(product.price),
                 "manufacture_date" : product.manufacture_date,
-                "stock"            : sum([size.stock for size in product.productoption_set.all()])
-            } for product in products]
+                "stock"            : product.stock
+            } for product in products.annotate(stock=Sum('productoption__stock'))]
 
         return JsonResponse({"response":result}, status=200)
