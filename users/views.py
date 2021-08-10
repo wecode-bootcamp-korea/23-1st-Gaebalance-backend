@@ -59,7 +59,7 @@ class LoginView(View):
                 return JsonResponse ({"MESSAGE":"USER_DOES_NOT_EXIST"},status = 401)
 
             access_token = jwt.encode({"id": user.id}, SECRET_KEY, algorithm="HS256")
-            return JsonResponse ({"access_token":"token","MESSAGE":"SUCCESS"}, status = 200)
+            return JsonResponse ({"access_token": access_token,"MESSAGE":"SUCCESS"}, status = 200)
 
         except KeyError:
             return JsonResponse ({"MESSAGE":"KEY_ERROR"},status = 400)    
