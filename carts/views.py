@@ -64,3 +64,14 @@ class CartView(View):
         Cart.objects.filter(id = cart_id).delete()
 
         return JsonResponse({"message":"DELETED"}, status = 204)
+
+    @login_decorator
+    def patch(self, request):
+        data = json.loads(request.body)
+        
+        if not Cart.objects.filter(id = data["cart_id"]).exists():
+            return JsonResponse({"message":"CART_DOES_NOT_EXIST"}, status = 400)
+        
+        Cart.objects.filter(id = data["cart_id"]).update(count = data["count"])
+        
+        return JsonResponse({"message":"UPDATED"}, status = 200)
