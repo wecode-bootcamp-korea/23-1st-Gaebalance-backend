@@ -56,12 +56,11 @@ class CartView(View):
         return JsonResponse({"response":response}, status = 200)
 
     @login_decorator
-    def delete(self, request):
-        cart = request.GET.getlist("id")
+    def delete(self, request, cart_id):
 
-        if not Cart.objects.filter(id__in = cart).exists():
+        if not Cart.objects.filter(id = cart_id).exists():
             return JsonResponse({"message":"CART_DOES_NOT_EXIST"}, status = 400)
 
-        Cart.objects.filter(id__in = cart).delete()
+        Cart.objects.filter(id = cart_id).delete()
 
         return JsonResponse({"message":"DELETED"}, status = 204)
