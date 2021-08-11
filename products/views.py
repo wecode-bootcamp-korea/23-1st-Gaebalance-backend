@@ -1,6 +1,6 @@
 from django.views import View
 from django.http  import JsonResponse
-from django.db.models import Q, Sum, Max, Min
+from django.db.models import Q, Sum, Max
 
 from products.models import Product
 
@@ -54,23 +54,26 @@ class ProductsView(View):
         if price_ranges:
             price_filters = Q()
             range_dict = {
-                '1':(int(Product.objects.aggregate(Min('price'))['price__min']),49999),
-                '2':(50000,99999),
-                '3':(100000,149999),
-                '4':(150000,199999),
-                '5':(200000,int(Product.objects.aggregate(Max('price'))['price__max'])),
+                '1' : (0, 49999),
+                '2' : (50000, 99999),
+                '3' : (100000, 149999),
+                '4' : (150000, 199999),
+                '5' : (200000, int(Product.objects.aggregate(Max('price'))['price__max'])),
             }
 
             for price_range in price_ranges:
-                price_filters |= Q(price__range=range_dict[price_range])
+                price_filters |= Q(price__range=range_dict.get(price_range, (0,0)))
             
             filters &= price_filters
 
-        products = Product.objects.filter(filters).order_by('id')
+        sort_key = {
+            'low-price'  : 'price',
+            'high-price' : '-price',
+            'newest'     : '-manufacture_date',
+            'bestseller' : 'stock'
+        }
 
-        if sort_by:
-            sort_key = {'low-price':'price','high-price':'-price','newest':'-manufacture_date','bestseller':'stock'}
-            products = products.annotate(stock=Sum('productoption__stock')).order_by(sort_key.get(sort_by,'id'))
+        products = Product.objects.annotate(stock=Sum('productoption__stock')).filter(filters).order_by(sort_key.get(sort_by,'id'))
 
         result = [{
                 "id"               : product.id,
@@ -79,6 +82,6 @@ class ProductsView(View):
                 "price"            : int(product.price),
                 "manufacture_date" : product.manufacture_date,
                 "stock"            : product.stock
-            } for product in products.annotate(stock=Sum('productoption__stock'))]
+        } for product in products]
 
         return JsonResponse({"response":result}, status=200)
