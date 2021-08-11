@@ -24,9 +24,7 @@ class CartView(View):
             if data["count"] == 0:
                 return JsonResponse({"message":"INVALID_COUNT"}, status = 400)
 
-            user = User.objects.get(id = request.user.id)
-
-            cart, is_created = Cart.objects.get_or_create(user = user, product = data["product_id"], size = data["size_id"])            
+            cart, is_created = Cart.objects.get_or_create(user = request.user, product_id = data["product_id"], size_id = data["size_id"])            
             cart.count += data["count"]
             cart.save()
                 
@@ -54,3 +52,24 @@ class CartView(View):
         }
 
         return JsonResponse({"response":response}, status = 200)
+
+    @login_decorator
+    def delete(self, request, cart_id):
+
+        if not Cart.objects.filter(id = cart_id).exists():
+            return JsonResponse({"message":"CART_DOES_NOT_EXIST"}, status = 400)
+
+        Cart.objects.filter(id = cart_id).delete()
+
+        return JsonResponse({"message":"DELETED"}, status = 204)
+
+    @login_decorator
+    def patch(self, request):
+        data = json.loads(request.body)
+        
+        if not Cart.objects.filter(id = data["cart_id"]).exists():
+            return JsonResponse({"message":"CART_DOES_NOT_EXIST"}, status = 400)
+        
+        Cart.objects.filter(id = data["cart_id"]).update(count = data["count"])
+        
+        return JsonResponse({"message":"UPDATED"}, status = 200)
