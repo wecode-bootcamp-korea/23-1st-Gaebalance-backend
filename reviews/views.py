@@ -7,24 +7,27 @@ from users.models          import User
 from products.models       import Product
 from users.utils           import login_decorator
 
-class ReviewPostingView(View):
+class ReviewView(View):
     @login_decorator    
     def post(self,request):
         try:
             data = json.loads(request.body)
+
             if data["title"] == "" :
                 return JsonResponse({"MESSAGE":"NULL_REVIEWS"}, status = 400)
 
             if data["size_rating"] == "" or data["color_rating"] == "" or data["delivery_rating"] == "" :
                 return JsonResponse({"MESSAGE":"NULL_RATING"}, status = 400)
 
-            if data["size_rating"] >= 6 or data["color_rating"] >= 6 or data["delivery_rating"] >= 6 :
+            rating_max = 6
+            if data["size_rating"] >= rating_max or data["color_rating"] >= rating_max or data["delivery_rating"] >= rating_max :
                 return JsonResponse({"MESSAGE":"RATING_INPUT_ERROR"}, status = 400)
 
-            user = User.objects.get(id = request.user.id)
+            Product.objects.filter(id=request.product.id).exists()
+
             Review.objects.create( 
-                user            = User.objects.get(id=request.user.id),
-                product         = Product.objects.get(id=data["product_id"]),
+                user            = request.user,
+                product         = data["product_id"],
                 size_rating     = data["size_rating"],
                 color_rating    = data["color_rating"],
                 delivery_rating = data["delivery_rating"],
