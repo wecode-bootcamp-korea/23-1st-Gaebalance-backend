@@ -19,11 +19,13 @@ class ReviewView(View):
             if data["size_rating"] == "" or data["color_rating"] == "" or data["delivery_rating"] == "" :
                 return JsonResponse({"MESSAGE":"NULL_RATING"}, status = 400)
 
-            rating_max = 6
-            if data["size_rating"] >= rating_max or data["color_rating"] >= rating_max or data["delivery_rating"] >= rating_max :
+            RATING_MAX = 6
+
+            if data["size_rating"] >= RATING_MAX or data["color_rating"] >= RATING_MAX or data["delivery_rating"] >= RATING_MAX :
                 return JsonResponse({"MESSAGE":"RATING_INPUT_ERROR"}, status = 400)
 
-            Product.objects.filter(id=request.product.id).exists()
+            if not Product.objects.filter(id=request.product_id).exists() :
+                return JsonResponse({"MESSAGE":"PRODUCT_DOES_NOT_EXISTS"}, status = 400)
 
             Review.objects.create( 
                 user            = request.user,
