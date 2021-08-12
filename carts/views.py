@@ -36,8 +36,8 @@ class CartView(View):
     @login_decorator
     def get(self, request):            
         carts = Cart.objects.filter(user_id = request.user.id)
-        total_price = carts.aggregate(price = Sum(F("count") * F("product__price")))
-
+        total_price = carts.aggregate(price = Sum(F("count") * F("product__price")))["price"] or 0
+        
         response = {
             "cart" : [{
                 "cart_id" : cart.id,
@@ -48,7 +48,7 @@ class CartView(View):
                 "count"   : cart.count,
                 "price"   : int(cart.count * cart.product.price)
             } for cart in carts],
-            "total_price" : int(total_price["price"])
+            "total_price" : int(total_price)
         }
 
         return JsonResponse({"response":response}, status = 200)
