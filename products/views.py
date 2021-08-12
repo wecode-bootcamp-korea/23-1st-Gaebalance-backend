@@ -37,6 +37,9 @@ class ProductsView(View):
         price_ranges   = request.GET.getlist('price',None)
         sort_by        = request.GET.get('sort', None)
         
+        limit          = request.GET.get('limit', None)
+        offset         = int(request.GET.get('offset', 0))
+
         filters = Q()
 
         if group:
@@ -73,7 +76,11 @@ class ProductsView(View):
             'bestseller' : 'stock'
         }
 
-        products = Product.objects.annotate(stock=Sum('productoption__stock')).filter(filters).order_by(sort_key.get(sort_by,'id'))
+        if limit:
+            limit = offset + int(limit)
+
+        products = Product.objects.annotate(stock=Sum('productoption__stock'))\
+                .filter(filters).order_by(sort_key.get(sort_by,'id'))[offset:limit]
 
         result = [{
                 "id"               : product.id,
